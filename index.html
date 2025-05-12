@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="mn">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Малчны бүртгэл</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-pink-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+      <h1 class="text-3xl font-bold mb-6 text-center">Малчны бүртгэл</h1>
+
+      <form id="herderForm" onsubmit="handleSubmit(event)">
+        <div class="mb-4">
+          <label class="block font-semibold">Он сар <span class="text-red-500">*</span></label>
+          <input type="date" id="date" class="mt-1 w-full p-2 border rounded" required />
+        </div>
+
+        <div class="mb-4">
+          <label class="block font-semibold">Малчны нэр <span class="text-red-500">*</span></label>
+          <input type="text" id="name" class="mt-1 w-full p-2 border rounded" required />
+        </div>
+
+        <div class="mb-4">
+          <label class="block font-semibold">Дансны дугаар <span class="text-red-500">*</span></label>
+          <input type="text" id="account" class="mt-1 w-full p-2 border rounded" required />
+        </div>
+
+        <div class="mb-4">
+          <label class="block font-semibold">Утасны дугаар <span class="text-red-500">*</span></label>
+          <input type="text" id="phone" class="mt-1 w-full p-2 border rounded" required />
+        </div>
+
+        <div class="mb-4">
+          <label class="block font-semibold">Хэдэн адуу <span class="text-red-500">*</span></label>
+          <input type="number" id="numHorses" min="1" class="mt-1 w-full p-2 border rounded" required />
+          <button type="button" onclick="generateWeightInputs()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Жингийн талбарууд үүсгэх</button>
+        </div>
+
+        <div id="weightInputs" class="mb-4"></div>
+
+        <div class="mb-4">
+          <label class="block font-semibold">1 кг-ийн үнэ (100-аас дээш жинтэй адуунд) ₮ <span class="text-red-500">*</span></label>
+          <input type="number" id="pricePerKgAbove" min="1" class="mt-1 w-full p-2 border rounded" required />
+        </div>
+
+        <div class="mb-4 hidden" id="belowPriceSection">
+          <label class="block font-semibold">1 кг-ийн үнэ (100-аас доош жинтэй адуунд) ₮ <span class="text-red-500">*</span></label>
+          <input type="number" id="pricePerKgBelow" min="1" class="mt-1 w-full p-2 border rounded" />
+        </div>
+
+        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded flex justify-center items-center gap-2">
+          Submit
+          <span>&rarr;</span>
+        </button>
+      </form>
+
+      <div class="mt-6 p-4 bg-gray-100 rounded" id="result"></div>
+    </div>
+
+    <script>
+      function generateWeightInputs() {
+        const num = parseInt(document.getElementById('numHorses').value);
+        const container = document.getElementById('weightInputs');
+        container.innerHTML = '';
+        for (let i = 1; i <= num; i++) {
+          const label = document.createElement('label');
+          label.className = 'block font-medium mt-2';
+          label.innerText = `${i}-р адууны жин (кг):`;
+
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.className = 'horseWeight mt-1 w-full p-2 border rounded';
+          input.min = '1';
+
+          container.appendChild(label);
+          container.appendChild(input);
+        }
+      }
+
+      function handleSubmit(event) {
+        event.preventDefault();
+
+        const weights = document.querySelectorAll('.horseWeight');
+        const pricePerKgAbove = parseFloat(document.getElementById('pricePerKgAbove').value);
+        const belowSection = document.getElementById('belowPriceSection');
+        let pricePerKgBelow = 0;
+
+        let totalAbove = 0;
+        let totalBelow = 0;
+        let hasBelow = false;
+
+        weights.forEach(input => {
+          const weight = parseFloat(input.value);
+          if (!isNaN(weight)) {
+            if (weight < 100) {
+              totalBelow += weight;
+              hasBelow = true;
+            } else {
+              totalAbove += weight;
+            }
+          }
+        });
+
+        if (hasBelow) {
+          belowSection.classList.remove('hidden');
+          pricePerKgBelow = parseFloat(document.getElementById('pricePerKgBelow').value);
+          if (isNaN(pricePerKgBelow) || pricePerKgBelow <= 0) {
+            alert('100-аас доош жинтэй адууны кг-ийн үнийг оруулна уу!');
+            return;
+          }
+        } else {
+          belowSection.classList.add('hidden');
+        }
+
+        const totalKg = totalAbove + totalBelow;
+        const totalMoney = totalAbove * pricePerKgAbove + totalBelow * pricePerKgBelow;
+
+        document.getElementById('result').innerHTML = `
+          <strong>Нийт жин:</strong> ${totalKg.toFixed(2)} кг<br>
+          <strong>100-аас дээш:</strong> ${totalAbove.toFixed(2)} кг * ${pricePerKgAbove} ₮ = ${(totalAbove * pricePerKgAbove).toLocaleString()} ₮<br>
+          <strong>100-аас доош:</strong> ${totalBelow.toFixed(2)} кг * ${pricePerKgBelow} ₮ = ${(totalBelow * pricePerKgBelow).toLocaleString()} ₮<br>
+          <strong>Нийт дүн:</strong> ${totalMoney.toLocaleString()} ₮
+        `;
+      }
+    </script>
+  </body>
+</html>
