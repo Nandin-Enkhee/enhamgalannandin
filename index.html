@@ -12,46 +12,45 @@
 
       <form id="herderForm" onsubmit="handleSubmit(event)">
         <div class="mb-4">
-          <label class="block font-semibold">Он сар <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">Он сар</label>
           <input type="date" id="date" class="mt-1 w-full p-2 border rounded" required />
         </div>
 
         <div class="mb-4">
-          <label class="block font-semibold">Малчны нэр <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">Малчны нэр</label>
           <input type="text" id="name" class="mt-1 w-full p-2 border rounded" required />
         </div>
 
         <div class="mb-4">
-          <label class="block font-semibold">Дансны дугаар <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">Дансны дугаар</label>
           <input type="text" id="account" class="mt-1 w-full p-2 border rounded" required />
         </div>
 
         <div class="mb-4">
-          <label class="block font-semibold">Утасны дугаар <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">Утасны дугаар</label>
           <input type="text" id="phone" class="mt-1 w-full p-2 border rounded" required />
         </div>
 
         <div class="mb-4">
-          <label class="block font-semibold">Хэдэн адуу <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">Адууны тоо</label>
           <input type="number" id="numHorses" min="1" class="mt-1 w-full p-2 border rounded" required />
-          <button type="button" onclick="generateWeightInputs()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Жингийн талбарууд үүсгэх</button>
+          <button type="button" onclick="generateWeightInputs()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded">Жин оруулах талбарууд</button>
         </div>
 
         <div id="weightInputs" class="mb-4"></div>
 
         <div class="mb-4">
-          <label class="block font-semibold">1 кг-ийн үнэ (100-аас дээш жинтэй адуунд) ₮ <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">1 кг-ийн үнэ (100-аас дээш адуу)</label>
           <input type="number" id="pricePerKgAbove" min="1" class="mt-1 w-full p-2 border rounded" required />
         </div>
 
         <div class="mb-4 hidden" id="belowPriceSection">
-          <label class="block font-semibold">1 кг-ийн үнэ (100-аас доош жинтэй адуунд) ₮ <span class="text-red-500">*</span></label>
+          <label class="block font-semibold">1 кг-ийн үнэ (100-аас доош адуу)</label>
           <input type="number" id="pricePerKgBelow" min="1" class="mt-1 w-full p-2 border rounded" />
         </div>
 
-        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded flex justify-center items-center gap-2">
-          Submit
-          <span>&rarr;</span>
+        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded mt-4">
+          Илгээх
         </button>
       </form>
 
@@ -78,35 +77,35 @@
         }
       }
 
-      function handleSubmit(event) {
+      async function handleSubmit(event) {
         event.preventDefault();
 
-        const weights = document.querySelectorAll('.horseWeight');
-        const pricePerKgAbove = parseFloat(document.getElementById('pricePerKgAbove').value);
-        const belowSection = document.getElementById('belowPriceSection');
-        let pricePerKgBelow = 0;
+        const date = document.getElementById("date").value;
+        const name = document.getElementById("name").value;
+        const account = document.getElementById("account").value;
+        const phone = document.getElementById("phone").value;
+        const weights = [...document.querySelectorAll('.horseWeight')].map(input => parseFloat(input.value));
+        const pricePerKgAbove = parseFloat(document.getElementById("pricePerKgAbove").value);
+        const pricePerKgBelowInput = document.getElementById("pricePerKgBelow");
+        const belowSection = document.getElementById("belowPriceSection");
 
-        let totalAbove = 0;
-        let totalBelow = 0;
-        let hasBelow = false;
+        let totalAbove = 0, totalBelow = 0, hasBelow = false;
 
-        weights.forEach(input => {
-          const weight = parseFloat(input.value);
-          if (!isNaN(weight)) {
-            if (weight < 100) {
-              totalBelow += weight;
-              hasBelow = true;
-            } else {
-              totalAbove += weight;
-            }
+        weights.forEach(weight => {
+          if (weight < 100) {
+            totalBelow += weight;
+            hasBelow = true;
+          } else {
+            totalAbove += weight;
           }
         });
 
+        let pricePerKgBelow = 0;
         if (hasBelow) {
           belowSection.classList.remove('hidden');
-          pricePerKgBelow = parseFloat(document.getElementById('pricePerKgBelow').value);
-          if (isNaN(pricePerKgBelow) || pricePerKgBelow <= 0) {
-            alert('100-аас доош жинтэй адууны кг-ийн үнийг оруулна уу!');
+          pricePerKgBelow = parseFloat(pricePerKgBelowInput.value);
+          if (isNaN(pricePerKgBelow)) {
+            alert("Доош кг-ийн үнийг оруулна уу!");
             return;
           }
         } else {
@@ -114,14 +113,39 @@
         }
 
         const totalKg = totalAbove + totalBelow;
-        const totalMoney = totalAbove * pricePerKgAbove + totalBelow * pricePerKgBelow;
+        const totalPrice = totalAbove * pricePerKgAbove + totalBelow * pricePerKgBelow;
 
-        document.getElementById('result').innerHTML = `
-          <strong>Нийт жин:</strong> ${totalKg.toFixed(2)} кг<br>
-          <strong>100-аас дээш:</strong> ${totalAbove.toFixed(2)} кг * ${pricePerKgAbove} ₮ = ${(totalAbove * pricePerKgAbove).toLocaleString()} ₮<br>
-          <strong>100-аас доош:</strong> ${totalBelow.toFixed(2)} кг * ${pricePerKgBelow} ₮ = ${(totalBelow * pricePerKgBelow).toLocaleString()} ₮<br>
-          <strong>Нийт дүн:</strong> ${totalMoney.toLocaleString()} ₮
-        `;
+        const formData = {
+          date,
+          name,
+          account,
+          phone,
+          totalAbove,
+          totalBelow,
+          totalKg,
+          totalPrice
+        };
+
+        
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbym06iX9FXEKZVTbMzndBRPz-4msafl1R4JPLujvrvwbACEZqkTjpBUSy7aFzS_kT_WLA/exec";
+
+        try {
+          const response = await fetch(WEB_APP_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData)
+          });
+
+          const text = await response.text();
+          document.getElementById("result").innerText = "Амжилттай илгээгдлээ!";
+          document.getElementById("herderForm").reset();
+          document.getElementById("weightInputs").innerHTML = '';
+          belowSection.classList.add("hidden");
+        } catch (err) {
+          document.getElementById("result").innerText = "Алдаа гарлаа: " + err.message;
+        }
       }
     </script>
   </body>
