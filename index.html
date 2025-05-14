@@ -128,13 +128,15 @@
     <div id="under100PriceField" style="display:none;">
       <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)">
     </div>
-    <button onclick="generateReceipt()">Бодолт</button>
+    <button onclick="generateReceipt()">Хэвлэхээр бэлдэх</button>
     <button onclick="window.print()">Хэвлэж гаргах</button>
 
     <div id="resultArea"></div>
   </div>
 
   <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDeUK3kADO7cFAXLTRaFSIrQvQos1W5DM4SOQ1hDmjMwcSODOCmv-NVXnzZ02_Lx8SJQ/exec"; // <= энд Apps Script линкээ тавина
+
     function generateWeightFields() {
       const count = parseInt(document.getElementById('horseCount').value);
       const container = document.getElementById('weightFields');
@@ -181,7 +183,8 @@
       const totalWeight = totalOver + totalUnder;
       const totalSum = sumOver + sumUnder;
 
-      return `
+      return {
+        html: `
         <div class="receipt">
           <div class="title-area">
             <strong>Эмээлт Эрдэнэ Трейд ХХК</strong><br>
@@ -199,20 +202,41 @@
           <p><strong>Нийт дүн:</strong> <span class="nowrap">${totalSum.toLocaleString()} ₮</span></p>
           <br>
           <p><strong>Малчин гарын үсэг: ______________________</strong></p>
-          <p><strong>Ажилтны нэр:</strong> Э.Энхцэцэг</p>
-        </div>
-      `;
+          <p><strong>Ажилтны нэр:</strong> Б.Алтангэрэл</p>
+        </div>`,
+        data: {
+          date,
+          herder,
+          account,
+          phone,
+          horseCount: weights.length,
+          weights,
+          priceOver100,
+          priceUnder100: totalUnder > 0 ? priceUnder100 : '',
+          totalWeight: totalWeight.toFixed(2),
+          totalSum: totalSum.toFixed(2)
+        }
+      };
     }
 
     function generateReceipt() {
       const area = document.getElementById('resultArea');
-      area.innerHTML = `
-        <div class="print-container">
-          ${createReceipt("Малчинд олгох")}
-          ${createReceipt("Компанид үлдэх")}
-        </div>
-      `;
+      const receipt1 = createReceipt("Малчинд олгох");
+      const receipt2 = createReceipt("Компанид үлдэх");
+
+      // Хэвлэх талбар
+      area.innerHTML = `<div class="print-container">${receipt1.html}${receipt2.html}</div>`;
       area.style.display = 'block';
+
+      // Google Sheet рүү өгөгдөл POST хийх
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(receipt1.data)
+      })
+      .then(res => res.json())
+      .then(data => console.log("Амжилттай хадгаллаа", data))
+      .catch(err => console.error("Хадгалахад алдаа:", err));
     }
   </script>
 </body>
