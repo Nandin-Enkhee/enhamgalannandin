@@ -5,18 +5,15 @@
   <title>Малчны бүртгэл</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
     :root {
       --main-bg: #f8fafc;
       --card-bg: #ffffff;
       --border-color: #e2e8f0;
-      --accent: #4f6e91;
-      --accent-hover: #3b516e;
+      --accent: #4a6e86;
+      --accent-hover: #355165;
       --text-color: #1e293b;
-    }
-
-    * {
-      box-sizing: border-box;
     }
 
     body {
@@ -28,7 +25,7 @@
     }
 
     .container {
-      max-width: 640px;
+      max-width: 680px;
       margin: auto;
       background: var(--card-bg);
       padding: 24px;
@@ -50,11 +47,6 @@
       border-radius: 10px;
       border: 1px solid var(--border-color);
       font-size: 16px;
-    }
-
-    input:focus {
-      border-color: var(--accent);
-      outline: none;
     }
 
     button {
@@ -89,58 +81,80 @@
       line-height: 1.6;
     }
 
-    .print-logo {
+    .logo-print {
       display: none;
-      text-align: center;
-      margin-bottom: 20px;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 100px;
     }
 
     .signature-area {
-      display: none;
+      margin-top: 40px;
+    }
+
+    .signature-area div {
       margin-top: 40px;
       display: flex;
       justify-content: space-between;
     }
 
-    .signature-area div {
-      width: 45%;
+    .signature-area span {
+      display: inline-block;
+      border-top: 1px solid #999;
+      padding-top: 4px;
+      width: 40%;
       text-align: center;
-      border-top: 1px solid var(--border-color);
-      padding-top: 8px;
+    }
+
+    .qr-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
     }
 
     @media print {
-      button, input {
+      button, input, #weightFields {
         display: none !important;
       }
-      #result {
-        background-color: white !important;
-        border: none;
+      .logo-print {
+        display: block;
       }
-      .print-logo, .signature-area {
-        display: block !important;
+      .qr-container {
+        display: block;
       }
     }
   </style>
 </head>
 <body>
+
   <div class="container">
     <h2>Малчны бүртгэлийн систем</h2>
-    <input type="date" id="date" placeholder="Огноо">
+    <input type="date" id="date">
     <input type="text" id="name" placeholder="Малчны нэр">
     <input type="text" id="account" placeholder="Дансны дугаар">
     <input type="text" id="phone" placeholder="Утасны дугаар">
     <input type="number" id="horseCount" placeholder="Адууны тоо">
-    <button onclick="generateWeightFields()">Жин оруулах талбарууд</button>
+    <button onclick="generateWeightFields()">Жин оруулах</button>
     <div id="weightFields"></div>
     <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (≥100 кг)">
     <div id="under100PriceField" style="display:none;">
       <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)">
     </div>
     <button onclick="calculateTotal()">Бодох</button>
-    <button onclick="window.print()">Хэвлэх</button>
+    <button onclick="downloadPDF()">PDF хадгалах</button>
 
-    <div id="result"></div>
+    <div id="result">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Logo_Example.svg" class="logo-print">
+      <div id="summaryContent"></div>
+      <div class="signature-area">
+        <div>
+          <span>Гарын үсэг</span>
+          <span>Тэмдэг</span>
+        </div>
+      </div>
+      <div id="qrcode" class="qr-container"></div>
+    </div>
   </div>
 
   <script>
@@ -169,29 +183,25 @@
       const weights = Array.from(document.getElementsByClassName('horseWeight'))
         .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
       const priceOver100 = parseFloat(document.getElementById('priceOver100').value);
-      const priceUnder100Input = document.getElementById('priceUnder100');
-      const priceUnder100 = priceUnder100Input ? parseFloat(priceUnder100Input.value) : 0;
+      const priceUnder100 = parseFloat(document.getElementById('priceUnder100')?.value || 0);
 
       let totalOver = 0, totalUnder = 0;
       let sumOver = 0, sumUnder = 0;
 
-      weights.forEach(weight => {
-        if (weight >= 100) {
-          totalOver += weight;
-          sumOver += weight * priceOver100;
+      weights.forEach(w => {
+        if (w >= 100) {
+          totalOver += w;
+          sumOver += w * priceOver100;
         } else {
-          totalUnder += weight;
-          sumUnder += weight * priceUnder100;
+          totalUnder += w;
+          sumUnder += w * priceUnder100;
         }
       });
 
       const totalWeight = totalOver + totalUnder;
       const totalSum = sumOver + sumUnder;
 
-      const resultHTML = `
-        <div class="print-logo">
-          <img src="logo.png" alt="Logo" height="80">
-        </div>
+      const summaryHTML = `
         <h3>Бүртгэлийн баримт</h3>
         <p><strong>Огноо:</strong> ${document.getElementById('date').value}</p>
         <p><strong>Малчны нэр:</strong> ${document.getElementById('name').value}</p>
@@ -202,19 +212,37 @@
         <p><strong>100-аас дээш:</strong> ${totalOver.toFixed(2)} кг * ${priceOver100} ₮ = ${sumOver.toLocaleString()} ₮</p>
         ${totalUnder > 0 ? `<p><strong>100-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100} ₮ = ${sumUnder.toLocaleString()} ₮</p>` : ''}
         <p><strong>Нийт дүн:</strong> ${totalSum.toLocaleString()} ₮</p>
-        <div class="print-logo">
-          <img src="qr.png" alt="QR" height="100">
-        </div>
-        <div class="signature-area">
-          <div>Гарын үсэг</div>
-          <div>Тамга</div>
-        </div>
       `;
 
+      document.getElementById('summaryContent').innerHTML = summaryHTML;
+      document.getElementById('result').style.display = 'block';
+
+      // QR код үүсгэх
+      const qrText = `Нийт: ${totalSum.toLocaleString()} ₮ | Жин: ${totalWeight.toFixed(2)} кг | Малчин: ${document.getElementById('name').value}`;
+      document.getElementById('qrcode').innerHTML = '';
+      QRCode.toCanvas(document.createElement('canvas'), qrText, function (error, canvas) {
+        if (!error) document.getElementById('qrcode').appendChild(canvas);
+      });
+    }
+
+    function downloadPDF() {
       const result = document.getElementById('result');
-      result.innerHTML = resultHTML;
-      result.style.display = 'block';
+      if (result.style.display === 'none') {
+        alert("Эхлээд 'Бодох' товч дарж үр дүн гаргаарай.");
+        return;
+      }
+
+      const opt = {
+        margin: 0.5,
+        filename: 'aduu-barimt.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(result).save();
     }
   </script>
+
 </body>
 </html>
