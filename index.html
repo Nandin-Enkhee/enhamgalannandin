@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Малчны бүртгэл</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
@@ -80,6 +81,11 @@
       white-space: nowrap;
     }
 
+    #qrcode {
+      margin-top: 10px;
+      text-align: center;
+    }
+
     @media print {
       input, button, h2 {
         display: none !important;
@@ -124,18 +130,19 @@
     <input type="number" id="horseCount" placeholder="Адууны тоо">
     <button onclick="generateWeightFields()">Жингийн талбарууд</button>
     <div id="weightFields"></div>
-    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (≥100 кг)">
+    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (100 кг-аас их)">
     <div id="under100PriceField" style="display:none;">
-      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)">
+      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (100 кг-аас бага)">
     </div>
-    <button onclick="generateReceipt()">Хэвлэхээр бэлдэх</button>
+    <button onclick="generateReceipt()">Бодох</button>
     <button onclick="window.print()">Хэвлэж гаргах</button>
+    <button onclick="resetForm()">Арилгах</button>
 
     <div id="resultArea"></div>
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrB90Zhj51Rmu9v48_6anRseToMM6cieJ-7-hcZs5XGC3QhZspPx7vaROzsZKh4AwUCA/exec"; // <= энд Apps Script линкээ тавина
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrB90Zhj51Rmu9v48_6anRseToMM6cieJ-7-hcZs5XGC3QhZspPx7vaROzsZKh4AwUCA/exec"; // <= энд Apps Script URL-ээ тавина
 
     function generateWeightFields() {
       const count = parseInt(document.getElementById('horseCount').value);
@@ -182,6 +189,8 @@
 
       const totalWeight = totalOver + totalUnder;
       const totalSum = sumOver + sumUnder;
+      const receiptId = `REG-${Date.now()}`;
+      const qrData = `Малчин: ${herder}, Огноо: ${date}, Дугаар: ${receiptId}`;
 
       return {
         html: `
@@ -191,6 +200,7 @@
             <span class="subtitle">Холбогдох утас: 94020230, 89028230</span><br>
             <span><em>${copyLabel}</em></span>
           </div>
+          <p><strong>Бүртгэлийн дугаар:</strong> ${receiptId}</p>
           <p><strong>Огноо:</strong> ${date}</p>
           <p><strong>Малчны нэр:</strong> ${herder}</p>
           <p><strong>Дансны дугаар:</strong> ${account}</p>
@@ -202,9 +212,13 @@
           <p><strong>Нийт дүн:</strong> <span class="nowrap">${totalSum.toLocaleString()} ₮</span></p>
           <br>
           <p><strong>Малчин гарын үсэг: ______________________</strong></p>
-          <p><strong>Ажилтны нэр:</strong> Б.Алтангэрэл</p>
+          <p><strong>Ажилтны нэр:</strong> Э.Энхцэцэг</p>
+          <div id="qrcode-${receiptId}"></div>
         </div>`,
+        qrData,
+        qrId: `qrcode-${receiptId}`,
         data: {
+          receiptId,
           date,
           herder,
           account,
@@ -224,19 +238,30 @@
       const receipt1 = createReceipt("Малчинд олгох");
       const receipt2 = createReceipt("Компанид үлдэх");
 
-      // Хэвлэх талбар
       area.innerHTML = `<div class="print-container">${receipt1.html}${receipt2.html}</div>`;
       area.style.display = 'block';
 
-      // Google Sheet рүү өгөгдөл POST хийх
+      // QR код үүсгэх
+      QRCode.toCanvas(document.getElementById(receipt1.qrId), receipt1.qrData);
+      QRCode.toCanvas(document.getElementById(receipt2.qrId), receipt2.qrData);
+
+      // Google Sheet рүү POST
       fetch(SCRIPT_URL, {
         method: "POST",
+        mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(receipt1.data)
       })
-      .then(res => res.json())
-      .then(data => console.log("Амжилттай хадгаллаа", data))
+      .then(() => console.log("Амжилттай хадгаллаа"))
       .catch(err => console.error("Хадгалахад алдаа:", err));
+    }
+
+    function resetForm() {
+      document.querySelectorAll("input").forEach(input => input.value = '');
+      document.getElementById('weightFields').innerHTML = '';
+      document.getElementById('under100PriceField').style.display = 'none';
+      document.getElementById('resultArea').style.display = 'none';
+      document.getElementById('resultArea').innerHTML = '';
     }
   </script>
 </body>
