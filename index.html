@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="mn">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Малчны бүртгэл</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
       --main-bg: #f8fafc;
@@ -13,10 +12,6 @@
       --accent: #4f6e91;
       --accent-hover: #3b516e;
       --text-color: #1e293b;
-    }
-
-    * {
-      box-sizing: border-box;
     }
 
     body {
@@ -33,15 +28,8 @@
       background: var(--card-bg);
       padding: 24px;
       border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       border: 1px solid var(--border-color);
-    }
-
-    h1.brand {
-      text-align: center;
-      font-size: 14px;
-      color: #64748b;
-      margin: 0 0 8px;
     }
 
     h2 {
@@ -76,20 +64,19 @@
       background-color: var(--accent-hover);
     }
 
-    #result {
+    .print-area {
       display: none;
-      margin-top: 30px;
     }
 
     .receipt {
+      border: 1px dashed var(--border-color);
       padding: 20px;
-      background-color: #f1f5f9;
+      margin-bottom: 30px;
       border-radius: 12px;
-      border: 1px solid var(--border-color);
-      margin-bottom: 40px;
     }
 
     .receipt h3 {
+      text-align: center;
       margin-top: 0;
       color: var(--accent-hover);
     }
@@ -99,9 +86,38 @@
       line-height: 1.6;
     }
 
+    .sign-area {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .sign-area p {
+      margin-top: 50px;
+      border-top: 1px solid var(--border-color);
+      width: 45%;
+      text-align: center;
+      padding-top: 5px;
+    }
+
     @media print {
-      button {
-        display: none !important;
+      body * {
+        visibility: hidden;
+      }
+      .print-area, .print-area * {
+        visibility: visible;
+      }
+      .print-area {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container, button {
+        display: none;
       }
     }
   </style>
@@ -109,53 +125,53 @@
 <body>
 
   <div class="container">
-    <h1 class="brand">Эмээлт Эрдэнэ Трейд ХХК</h1>
     <h2>Малчны бүртгэлийн систем</h2>
-    <input type="date" id="date" placeholder="Огноо">
-    <input type="text" id="name" placeholder="Малчны нэр">
-    <input type="text" id="account" placeholder="Дансны дугаар">
-    <input type="text" id="phone" placeholder="Утасны дугаар">
-    <input type="number" id="horseCount" placeholder="Адууны тоо">
+    <input type="date" id="date" placeholder="Огноо" />
+    <input type="text" id="name" placeholder="Малчны нэр" />
+    <input type="text" id="account" placeholder="Дансны дугаар" />
+    <input type="text" id="phone" placeholder="Утасны дугаар" />
+    <input type="number" id="horseCount" placeholder="Адууны тоо" />
     <button onclick="generateWeightFields()">Жин оруулах талбарууд</button>
     <div id="weightFields"></div>
-    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (≥100 кг)">
-    <div id="under100PriceField" style="display:none;">
-      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)">
+    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (≥100 кг)" />
+    <div id="under100PriceField" style="display: none;">
+      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)" />
     </div>
-    <input type="text" id="staffName" placeholder="Хариуцсан ажилтны нэр">
     <button onclick="calculateTotal()">Бодох</button>
-    <button onclick="downloadPDF()">PDF хадгалах</button>
-
-    <div id="result"></div>
+    <button onclick="window.print()">Хэвлэж гаргах</button>
   </div>
 
+  <div class="print-area" id="result"></div>
+
   <script>
+    const employeeName = "Наранцэцэг"; // Энд ажилтны нэрээ оруул
+
     function generateWeightFields() {
-      const count = parseInt(document.getElementById('horseCount').value);
-      const container = document.getElementById('weightFields');
-      container.innerHTML = '';
+      const count = parseInt(document.getElementById("horseCount").value);
+      const container = document.getElementById("weightFields");
+      container.innerHTML = "";
       for (let i = 0; i < count; i++) {
-        const input = document.createElement('input');
-        input.type = 'number';
+        const input = document.createElement("input");
+        input.type = "number";
         input.placeholder = `${i + 1}-р адууны жин (кг)`;
-        input.className = 'horseWeight';
+        input.className = "horseWeight";
         input.onchange = checkUnder100Weight;
         container.appendChild(input);
       }
     }
 
     function checkUnder100Weight() {
-      const weights = Array.from(document.getElementsByClassName('horseWeight'))
-        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
-      const hasUnder100 = weights.some(w => w < 100);
-      document.getElementById('under100PriceField').style.display = hasUnder100 ? 'block' : 'none';
+      const weights = Array.from(document.getElementsByClassName("horseWeight"))
+        .map((el) => parseFloat(el.value))
+        .filter((w) => !isNaN(w));
+      const hasUnder100 = weights.some((w) => w < 100);
+      document.getElementById("under100PriceField").style.display = hasUnder100 ? "block" : "none";
     }
 
-    function generateReceiptHTML(date, name, account, phone, weights, priceOver100, priceUnder100, staffName) {
-      let totalOver = 0, totalUnder = 0;
-      let sumOver = 0, sumUnder = 0;
+    function generateReceiptHTML(label, date, name, account, phone, weights, priceOver100, priceUnder100) {
+      let totalOver = 0, totalUnder = 0, sumOver = 0, sumUnder = 0;
 
-      weights.forEach(weight => {
+      weights.forEach((weight) => {
         if (weight >= 100) {
           totalOver += weight;
           sumOver += weight * priceOver100;
@@ -169,71 +185,48 @@
       const totalSum = sumOver + sumUnder;
 
       return `
-      <div class="receipt">
-        <h3>Бүртгэлийн баримт</h3>
-        <p><strong>Огноо:</strong> ${date}</p>
-        <p><strong>Малчны нэр:</strong> ${name}</p>
-        <p><strong>Дансны дугаар:</strong> ${account}</p>
-        <p><strong>Утасны дугаар:</strong> ${phone}</p>
-        <p><strong>Адууны тоо:</strong> ${weights.length}</p>
-        <p><strong>Нийт жин:</strong> ${totalWeight.toFixed(2)} кг</p>
-        <p><strong>100-аас дээш:</strong> ${totalOver.toFixed(2)} кг * ${priceOver100} ₮ = ${sumOver.toLocaleString()} ₮</p>
-        ${totalUnder > 0 ? `<p><strong>100-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100} ₮ = ${sumUnder.toLocaleString()} ₮</p>` : ''}
-        <p><strong>Нийт дүн:</strong> ${totalSum.toLocaleString()} ₮</p>
-        <br>
-        <p><strong>Хариуцсан ажилтан:</strong> ${staffName}</p>
-        <p><strong>Ажилтны гарын үсэг:</strong> ____________________</p>
-        <p><strong>Малчны гарын үсэг:</strong> ____________________</p>
-      </div>
+        <div class="receipt">
+          <small>Эмээлт Эрдэнэ Трейд ХХК</small>
+          <h3>${label}</h3>
+          <p><strong>Огноо:</strong> ${date}</p>
+          <p><strong>Малчны нэр:</strong> ${name}</p>
+          <p><strong>Дансны дугаар:</strong> ${account}</p>
+          <p><strong>Утасны дугаар:</strong> ${phone}</p>
+          <p><strong>Адууны тоо:</strong> ${weights.length}</p>
+          <p><strong>Нийт жин:</strong> ${totalWeight.toFixed(2)} кг</p>
+          <p><strong>100-аас дээш:</strong> ${totalOver.toFixed(2)} кг * ${priceOver100} ₮ = ${sumOver.toLocaleString()} ₮</p>
+          ${
+            totalUnder > 0
+              ? `<p><strong>100-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100} ₮ = ${sumUnder.toLocaleString()} ₮</p>`
+              : ""
+          }
+          <p><strong>Нийт дүн:</strong> ${totalSum.toLocaleString()} ₮</p>
+          <div class="sign-area">
+            <p>Малчны гарын үсэг</p>
+            <p>Ажилтны нэр: ${employeeName}</p>
+          </div>
+        </div>
       `;
     }
 
     function calculateTotal() {
-      const weights = Array.from(document.getElementsByClassName('horseWeight'))
-        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
-      const priceOver100 = parseFloat(document.getElementById('priceOver100').value);
-      const priceUnder100Input = document.getElementById('priceUnder100');
-      const priceUnder100 = priceUnder100Input ? parseFloat(priceUnder100Input.value) : 0;
+      const date = document.getElementById("date").value;
+      const name = document.getElementById("name").value;
+      const account = document.getElementById("account").value;
+      const phone = document.getElementById("phone").value;
+      const weights = Array.from(document.getElementsByClassName("horseWeight"))
+        .map((el) => parseFloat(el.value))
+        .filter((w) => !isNaN(w));
 
-      const date = document.getElementById('date').value;
-      const name = document.getElementById('name').value;
-      const account = document.getElementById('account').value;
-      const phone = document.getElementById('phone').value;
-      const staffName = document.getElementById('staffName').value;
+      const priceOver100 = parseFloat(document.getElementById("priceOver100").value);
+      const priceUnder100 = parseFloat(document.getElementById("priceUnder100")?.value || 0);
 
-      const result = document.getElementById('result');
-      result.innerHTML = generateReceiptHTML(date, name, account, phone, weights, priceOver100, priceUnder100, staffName)
-        + generateReceiptHTML(date, name, account, phone, weights, priceOver100, priceUnder100, staffName);
-      result.style.display = 'block';
-    }
+      const receipt1 = generateReceiptHTML("Бүртгэлийн баримт (Компанид)", date, name, account, phone, weights, priceOver100, priceUnder100);
+      const receipt2 = generateReceiptHTML("Бүртгэлийн баримт (Малчинд)", date, name, account, phone, weights, priceOver100, priceUnder100);
 
-    function downloadPDF() {
-      const original = document.getElementById('result');
-
-      if (original.style.display === 'none' || !original.innerHTML.trim()) {
-        alert("Эхлээд 'Бодох' товч дарж үр дүн үүсгээрэй.");
-        return;
-      }
-
-      const clone = original.cloneNode(true);
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.display = 'block';
-      document.body.appendChild(clone);
-
-      const opt = {
-        margin: 0.5,
-        filename: 'aduu-barimt.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(clone).save().then(() => {
-        document.body.removeChild(clone);
-      });
+      const result = document.getElementById("result");
+      result.innerHTML = receipt1 + receipt2;
     }
   </script>
-
 </body>
 </html>
