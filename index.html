@@ -104,12 +104,12 @@
       .receipt {
         padding: 16px;
         box-sizing: border-box;
-        page-break-after: always;
         border: none;
+        page-break-inside: avoid;
       }
 
       @page {
-        margin: 10mm;
+        margin: 5mm;
       }
     }
   </style>
@@ -128,7 +128,7 @@
     <div id="under100PriceField" style="display:none;">
       <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)">
     </div>
-    <button onclick="generateReceipt()">Хэвлэхээр бэлдэх</button>
+    <button onclick="generateReceipt()">Бодолт</button>
     <button onclick="window.print()">Хэвлэж гаргах</button>
 
     <div id="resultArea"></div>
@@ -199,7 +199,7 @@
           <p><strong>Нийт дүн:</strong> <span class="nowrap">${totalSum.toLocaleString()} ₮</span></p>
           <br>
           <p><strong>Малчин гарын үсэг: ______________________</strong></p>
-          <p><strong>Ажилтны нэр:</strong> Б.Алтангэрэл</p>
+          <p><strong>Ажилтны нэр:</strong> Э.Энхцэцэг</p>
         </div>
       `;
     }
