@@ -3,71 +3,145 @@
 <head>
   <meta charset="UTF-8">
   <title>Малчны бүртгэл</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f4f9;
+    :root {
+      --main-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --accent: #4f6e91;
+      --accent-hover: #3b516e;
+      --text-color: #1e293b;
     }
-    .form-section {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      max-width: 600px;
-      margin: auto;
-    }
-    input, button {
-      margin: 10px 0;
-      padding: 10px;
-      width: 100%;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+
+    * {
       box-sizing: border-box;
     }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    #weightFields input {
-      margin-bottom: 5px;
-    }
-    #result {
-      border: 1px solid #ccc;
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: var(--main-bg);
+      margin: 0;
       padding: 20px;
-      margin-top: 30px;
-      background-color: #fff;
+      color: var(--text-color);
+    }
+
+    .container {
+      max-width: 640px;
+      margin: auto;
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
       border-radius: 10px;
-      max-width: 600px;
-      margin: 30px auto;
+      border: 1px solid var(--border-color);
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    button {
+      background-color: var(--accent);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+
+    #result {
+      display: none;
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f1f5f9;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    #result h3 {
+      margin-top: 0;
+      color: var(--accent-hover);
+    }
+
+    #result p {
+      margin: 6px 0;
+      line-height: 1.6;
+    }
+
+    .print-logo {
+      display: none;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .signature-area {
+      display: none;
+      margin-top: 40px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .signature-area div {
+      width: 45%;
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+      padding-top: 8px;
+    }
+
+    @media print {
+      button, input {
+        display: none !important;
+      }
+      #result {
+        background-color: white !important;
+        border: none;
+      }
+      .print-logo, .signature-area {
+        display: block !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="form-section">
-    <h2>Малчны бүртгэл</h2>
-    <input type="date" id="date" placeholder="Он сар">
+  <div class="container">
+    <h2>Малчны бүртгэлийн систем</h2>
+    <input type="date" id="date" placeholder="Огноо">
     <input type="text" id="name" placeholder="Малчны нэр">
     <input type="text" id="account" placeholder="Дансны дугаар">
     <input type="text" id="phone" placeholder="Утасны дугаар">
     <input type="number" id="horseCount" placeholder="Адууны тоо">
-    <button onclick="generateWeightFields()">Жингийн талбарууд үүсгэх</button>
+    <button onclick="generateWeightFields()">Жин оруулах талбарууд</button>
     <div id="weightFields"></div>
-    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (100-аас дээш жинтэй адуунд)">
-    <div id="under100PriceField" style="display:none">
-      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (100-аас доош жинтэй адуунд)">
+    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (≥100 кг)">
+    <div id="under100PriceField" style="display:none;">
+      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (<100 кг)">
     </div>
-    <button onclick="calculateTotal()">Submit</button>
-    <button onclick="downloadPDF()">PDF болгох</button>
-  </div>
+    <button onclick="calculateTotal()">Бодох</button>
+    <button onclick="window.print()">Хэвлэх</button>
 
-  <div id="result" style="display:none;"></div>
+    <div id="result"></div>
+  </div>
 
   <script>
     function generateWeightFields() {
@@ -77,26 +151,26 @@
       for (let i = 0; i < count; i++) {
         const input = document.createElement('input');
         input.type = 'number';
-        input.placeholder = `${i+1}-р адууны жин (кг)`;
+        input.placeholder = `${i + 1}-р адууны жин (кг)`;
         input.className = 'horseWeight';
-        input.oninput = checkUnder100Weight;
+        input.onchange = checkUnder100Weight;
         container.appendChild(input);
       }
     }
 
     function checkUnder100Weight() {
       const weights = Array.from(document.getElementsByClassName('horseWeight'))
-        .map(el => parseFloat(el.value))
-        .filter(w => !isNaN(w));
+        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
       const hasUnder100 = weights.some(w => w < 100);
       document.getElementById('under100PriceField').style.display = hasUnder100 ? 'block' : 'none';
     }
 
     function calculateTotal() {
-      const weights = Array.from(document.getElementsByClassName('horseWeight')).map(el => parseFloat(el.value)).filter(w => !isNaN(w));
+      const weights = Array.from(document.getElementsByClassName('horseWeight'))
+        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
       const priceOver100 = parseFloat(document.getElementById('priceOver100').value);
       const priceUnder100Input = document.getElementById('priceUnder100');
-      const priceUnder100 = priceUnder100Input && priceUnder100Input.offsetParent !== null ? parseFloat(priceUnder100Input.value) : 0;
+      const priceUnder100 = priceUnder100Input ? parseFloat(priceUnder100Input.value) : 0;
 
       let totalOver = 0, totalUnder = 0;
       let sumOver = 0, sumUnder = 0;
@@ -114,7 +188,10 @@
       const totalWeight = totalOver + totalUnder;
       const totalSum = sumOver + sumUnder;
 
-      const result = `
+      const resultHTML = `
+        <div class="print-logo">
+          <img src="logo.png" alt="Logo" height="80">
+        </div>
         <h3>Бүртгэлийн баримт</h3>
         <p><strong>Огноо:</strong> ${document.getElementById('date').value}</p>
         <p><strong>Малчны нэр:</strong> ${document.getElementById('name').value}</p>
@@ -125,29 +202,18 @@
         <p><strong>100-аас дээш:</strong> ${totalOver.toFixed(2)} кг * ${priceOver100} ₮ = ${sumOver.toLocaleString()} ₮</p>
         ${totalUnder > 0 ? `<p><strong>100-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100} ₮ = ${sumUnder.toLocaleString()} ₮</p>` : ''}
         <p><strong>Нийт дүн:</strong> ${totalSum.toLocaleString()} ₮</p>
+        <div class="print-logo">
+          <img src="qr.png" alt="QR" height="100">
+        </div>
+        <div class="signature-area">
+          <div>Гарын үсэг</div>
+          <div>Тэмдэг</div>
+        </div>
       `;
 
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = result;
-      resultDiv.style.display = 'block';
-    }
-
-    function downloadPDF() {
       const result = document.getElementById('result');
-      if (result.style.display === 'none' || !result.innerHTML.trim()) {
-        alert("Эхлээд Submit дарж үр дүн үүсгээрэй.");
-        return;
-      }
-
-      const opt = {
-        margin: 0.5,
-        filename: 'aduu-barimt.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(result).save();
+      result.innerHTML = resultHTML;
+      result.style.display = 'block';
     }
   </script>
 </body>
