@@ -4,14 +4,19 @@
   <meta charset="UTF-8" />
   <title>Малчны бүртгэл</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --main-bg: #f8fafc;
       --card-bg: #ffffff;
       --border-color: #e2e8f0;
-      --accent: #4f6e91;
-      --accent-hover: #3b516e;
+      --accent: #3a5c7c;
+      --accent-hover: #2b445c;
       --text-color: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
@@ -47,11 +52,6 @@
       font-size: 16px;
     }
 
-    input:focus {
-      border-color: var(--accent);
-      outline: none;
-    }
-
     button {
       background-color: var(--accent);
       color: white;
@@ -64,66 +64,33 @@
       background-color: var(--accent-hover);
     }
 
-    .print-area {
+    #result {
       display: none;
-    }
-
-    .receipt {
-      border: 1px dashed var(--border-color);
-      padding: 20px;
-      margin-bottom: 30px;
-      border-radius: 12px;
-    }
-
-    .receipt h3 {
-      text-align: center;
-      margin-top: 0;
-      color: var(--accent-hover);
-    }
-
-    .receipt p {
-      margin: 6px 0;
-      line-height: 1.6;
-    }
-
-    .sign-area {
       margin-top: 30px;
-      display: flex;
-      justify-content: space-between;
     }
 
-    .sign-area p {
-      margin-top: 50px;
-      border-top: 1px solid var(--border-color);
-      width: 45%;
-      text-align: center;
-      padding-top: 5px;
+    .receipt-copy {
+      padding: 20px;
+      border: 1px dashed #ccc;
+      margin-bottom: 40px;
     }
 
     @media print {
-      body * {
-        visibility: hidden;
+      button, input, .container > h2 {
+        display: none !important;
       }
-      .print-area, .print-area * {
-        visibility: visible;
+
+      #result {
+        display: block !important;
       }
-      .print-area {
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      .container, button {
-        display: none;
+
+      .receipt-copy {
+        page-break-inside: avoid;
       }
     }
   </style>
 </head>
 <body>
-
   <div class="container">
     <h2>Малчны бүртгэлийн систем</h2>
     <input type="date" id="date" placeholder="Огноо" />
@@ -139,12 +106,12 @@
     </div>
     <button onclick="calculateTotal()">Бодох</button>
     <button onclick="window.print()">Хэвлэж гаргах</button>
+    <button onclick="downloadPDF()">PDF хадгалах</button>
+    <div id="result"></div>
   </div>
 
-  <div class="print-area" id="result"></div>
-
   <script>
-    const employeeName = "Наранцэцэг"; // Энд ажилтны нэрээ оруул
+    const currentEmployee = "Б.Энхтүвшин";
 
     function generateWeightFields() {
       const count = parseInt(document.getElementById("horseCount").value);
@@ -162,16 +129,22 @@
 
     function checkUnder100Weight() {
       const weights = Array.from(document.getElementsByClassName("horseWeight"))
-        .map((el) => parseFloat(el.value))
-        .filter((w) => !isNaN(w));
-      const hasUnder100 = weights.some((w) => w < 100);
+        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
+      const hasUnder100 = weights.some(w => w < 100);
       document.getElementById("under100PriceField").style.display = hasUnder100 ? "block" : "none";
     }
 
-    function generateReceiptHTML(label, date, name, account, phone, weights, priceOver100, priceUnder100) {
-      let totalOver = 0, totalUnder = 0, sumOver = 0, sumUnder = 0;
+    function calculateTotal() {
+      const weights = Array.from(document.getElementsByClassName("horseWeight"))
+        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
+      const priceOver100 = parseFloat(document.getElementById("priceOver100").value);
+      const priceUnder100Input = document.getElementById("priceUnder100");
+      const priceUnder100 = priceUnder100Input ? parseFloat(priceUnder100Input.value) : 0;
 
-      weights.forEach((weight) => {
+      let totalOver = 0, totalUnder = 0;
+      let sumOver = 0, sumUnder = 0;
+
+      weights.forEach(weight => {
         if (weight >= 100) {
           totalOver += weight;
           sumOver += weight * priceOver100;
@@ -184,48 +157,64 @@
       const totalWeight = totalOver + totalUnder;
       const totalSum = sumOver + sumUnder;
 
-      return `
-        <div class="receipt">
-          <small>Эмээлт Эрдэнэ Трейд ХХК</small>
-          <h3>${label}</h3>
-          <p><strong>Огноо:</strong> ${date}</p>
-          <p><strong>Малчны нэр:</strong> ${name}</p>
-          <p><strong>Дансны дугаар:</strong> ${account}</p>
-          <p><strong>Утасны дугаар:</strong> ${phone}</p>
+      const under100Section = totalUnder > 0
+        ? `<p><strong>100-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100} ₮ = ${sumUnder.toLocaleString()} ₮</p>`
+        : '';
+
+      const content = `
+        <div>
+          <p style="font-size: 13px; color: #888;">Эмээлт Эрдэнэ Трейд ХХК</p>
+          <h3>Бүртгэлийн баримт</h3>
+          <p><strong>Огноо:</strong> ${document.getElementById("date").value}</p>
+          <p><strong>Малчны нэр:</strong> ${document.getElementById("name").value}</p>
+          <p><strong>Дансны дугаар:</strong> ${document.getElementById("account").value}</p>
+          <p><strong>Утасны дугаар:</strong> ${document.getElementById("phone").value}</p>
           <p><strong>Адууны тоо:</strong> ${weights.length}</p>
           <p><strong>Нийт жин:</strong> ${totalWeight.toFixed(2)} кг</p>
           <p><strong>100-аас дээш:</strong> ${totalOver.toFixed(2)} кг * ${priceOver100} ₮ = ${sumOver.toLocaleString()} ₮</p>
-          ${
-            totalUnder > 0
-              ? `<p><strong>100-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100} ₮ = ${sumUnder.toLocaleString()} ₮</p>`
-              : ""
-          }
+          ${under100Section}
           <p><strong>Нийт дүн:</strong> ${totalSum.toLocaleString()} ₮</p>
-          <div class="sign-area">
-            <p>Малчны гарын үсэг</p>
-            <p>Ажилтны нэр: ${employeeName}</p>
-          </div>
+          <br />
+          <table style="width:100%;">
+            <tr>
+              <td><strong>Малчны гарын үсэг:</strong> ___________________</td>
+              <td style="text-align:right;"><strong>Ажилтны нэр:</strong> ${currentEmployee}</td>
+            </tr>
+          </table>
         </div>
       `;
-    }
-
-    function calculateTotal() {
-      const date = document.getElementById("date").value;
-      const name = document.getElementById("name").value;
-      const account = document.getElementById("account").value;
-      const phone = document.getElementById("phone").value;
-      const weights = Array.from(document.getElementsByClassName("horseWeight"))
-        .map((el) => parseFloat(el.value))
-        .filter((w) => !isNaN(w));
-
-      const priceOver100 = parseFloat(document.getElementById("priceOver100").value);
-      const priceUnder100 = parseFloat(document.getElementById("priceUnder100")?.value || 0);
-
-      const receipt1 = generateReceiptHTML("Бүртгэлийн баримт (Компанид)", date, name, account, phone, weights, priceOver100, priceUnder100);
-      const receipt2 = generateReceiptHTML("Бүртгэлийн баримт (Малчинд)", date, name, account, phone, weights, priceOver100, priceUnder100);
 
       const result = document.getElementById("result");
-      result.innerHTML = receipt1 + receipt2;
+      result.innerHTML = `
+        <div class="receipt-copy">${content}</div>
+        <div class="receipt-copy">${content}</div>
+      `;
+      result.style.display = "block";
+    }
+
+    function downloadPDF() {
+      const original = document.getElementById("result");
+      if (original.style.display === "none" || !original.innerHTML.trim()) {
+        alert("Эхлээд 'Бодох' товч дарж үр дүн үүсгээрэй.");
+        return;
+      }
+
+      const clone = original.cloneNode(true);
+      clone.style.position = "absolute";
+      clone.style.left = "-9999px";
+      document.body.appendChild(clone);
+
+      const opt = {
+        margin: 0.5,
+        filename: "aduu-barimt.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      };
+
+      html2pdf().set(opt).from(clone).save().then(() => {
+        document.body.removeChild(clone);
+      });
     }
   </script>
 </body>
