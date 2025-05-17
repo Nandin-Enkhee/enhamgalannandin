@@ -161,7 +161,7 @@
     function checkUnder100Weight() {
       const weights = Array.from(document.getElementsByClassName('horseWeight'))
         .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
-      const hasUnder100 = weights.some(w => w < 100);
+      const hasUnder100 = weights.some(w => w < 101);
       document.getElementById('under100PriceField').style.display = hasUnder100 ? 'block' : 'none';
     }
 
@@ -178,7 +178,7 @@
 
       let totalOver = 0, totalUnder = 0, sumOver = 0, sumUnder = 0;
       weights.forEach(w => {
-        if (w >= 100) {
+        if (w >= 101) {
           totalOver += w;
           sumOver += w * priceOver100;
         } else {
