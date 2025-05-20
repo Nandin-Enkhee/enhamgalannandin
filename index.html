@@ -24,6 +24,14 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
 
+    button:disabled {
+      background-color: #cbd5e1 !important;
+      color: #ffffff;
+      cursor: not-allowed;
+      border: none;
+    }
+    
+
     h2 {
       text-align: center;
       margin-bottom: 20px;
@@ -134,7 +142,7 @@
     <div id="under100PriceField" style="display:none;">
       <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (100 кг-аас бага)">
     </div>
-    <button onclick="generateReceipt()">Бодох</button>
+    <button id="calculateBtn" onclick="generateReceipt()" disabled>Бодох</button>
     <button onclick="window.print()">Хэвлэж гаргах</button>
     <button onclick="resetForm()">Арилгах</button>
 
@@ -142,7 +150,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZTWwCOzHje5wK-TOC8ZqYxPbeGV_EQRWOawN_1aulQrsshmsOIZ0OZFLG8pQHjGpgCQ/exec"; // <= энд Apps Script URL-ээ тавина
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZTWwCOzHje5wK-TOC8ZqYxPbeGV_EQRWOawN_1aulQrsshmsOIZ0OZFLG8pQHjGpgCQ/exec";
 
     function generateWeightFields() {
       const count = parseInt(document.getElementById('horseCount').value);
@@ -154,8 +162,11 @@
         input.placeholder = `${i + 1}-р адууны жин (кг)`;
         input.className = 'horseWeight';
         input.onchange = checkUnder100Weight;
+        input.oninput = validateForm;
         container.appendChild(input);
+        
       }
+      validateForm();
     }
 
     function checkUnder100Weight() {
@@ -163,6 +174,7 @@
         .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
       const hasUnder100 = weights.some(w => w < 101);
       document.getElementById('under100PriceField').style.display = hasUnder100 ? 'block' : 'none';
+      validateForm();
     }
 
     function createReceipt(copyLabel) {
@@ -241,11 +253,9 @@
       area.innerHTML = `<div class="print-container">${receipt1.html}${receipt2.html}</div>`;
       area.style.display = 'block';
 
-      // QR код үүсгэх
       QRCode.toCanvas(document.getElementById(receipt1.qrId), receipt1.qrData);
       QRCode.toCanvas(document.getElementById(receipt2.qrId), receipt2.qrData);
 
-      // Google Sheet рүү POST
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -262,7 +272,42 @@
       document.getElementById('under100PriceField').style.display = 'none';
       document.getElementById('resultArea').style.display = 'none';
       document.getElementById('resultArea').innerHTML = '';
+      document.getElementById('calculateBtn').disabled = true;
     }
+
+    function validateForm() {
+      const required = ['date', 'herder', 'account', 'phone', 'horseCount', 'priceOver100'];
+      let isValid = required.every(id => {
+        const el = document.getElementById(id);
+        return el && el.value.trim() !== '';
+      });
+
+      const weightInputs = document.querySelectorAll('.horseWeight');
+      if (weightInputs.length === 0 || Array.from(weightInputs).some(i => !i.value.trim())) {
+        isValid = false;
+      }
+
+      const under100Visible = document.getElementById('under100PriceField')?.style.display !== 'none';
+      if (under100Visible && !document.getElementById('priceUnder100')?.value.trim()) {
+        isValid = false;
+      }
+
+      document.getElementById('calculateBtn').disabled = !isValid;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const ids = ['date', 'herder', 'account', 'phone', 'horseCount', 'priceOver100', 'priceUnder100'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', validateForm);
+      });
+
+      document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('horseWeight')) {
+          validateForm();
+        }
+      });
+    });
   </script>
 </body>
 </html>
