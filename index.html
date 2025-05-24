@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="mn">
 <head>
   <meta charset="UTF-8">
@@ -30,7 +30,6 @@
       cursor: not-allowed;
       border: none;
     }
-    
 
     h2 {
       text-align: center;
@@ -146,6 +145,9 @@
     <button onclick="window.print()">Хэвлэж гаргах</button>
     <button onclick="resetForm()">Арилгах</button>
 
+    <!-- NEW: Display horse count by weight category -->
+    <div id="weightStats" style="margin-top: 20px; font-weight: bold;"></div>
+
     <div id="resultArea"></div>
   </div>
 
@@ -161,12 +163,15 @@
         input.type = 'number';
         input.placeholder = `${i + 1}-р адууны жин (кг)`;
         input.className = 'horseWeight';
-        input.onchange = checkUnder100Weight;
+        input.onchange = () => {
+          checkUnder100Weight();
+          updateWeightStats();
+        };
         input.oninput = validateForm;
         container.appendChild(input);
-        
       }
       validateForm();
+      updateWeightStats();
     }
 
     function checkUnder100Weight() {
@@ -175,6 +180,15 @@
       const hasUnder100 = weights.some(w => w < 101);
       document.getElementById('under100PriceField').style.display = hasUnder100 ? 'block' : 'none';
       validateForm();
+    }
+
+    function updateWeightStats() {
+      const weights = Array.from(document.getElementsByClassName('horseWeight'))
+        .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
+      const overCount = weights.filter(w => w >= 101).length;
+      const underCount = weights.filter(w => w < 101).length;
+      document.getElementById('weightStats').innerText = 
+        `100 кг-аас дээш адуу: ${overCount} | 100 кг-аас доош адуу: ${underCount}`;
     }
 
     function createReceipt(copyLabel) {
@@ -273,6 +287,7 @@
       document.getElementById('resultArea').style.display = 'none';
       document.getElementById('resultArea').innerHTML = '';
       document.getElementById('calculateBtn').disabled = true;
+      document.getElementById('weightStats').innerText = '';
     }
 
     function validateForm() {
@@ -305,6 +320,7 @@
       document.addEventListener('input', function (e) {
         if (e.target.classList.contains('horseWeight')) {
           validateForm();
+          updateWeightStats();
         }
       });
     });
