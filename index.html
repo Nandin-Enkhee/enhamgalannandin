@@ -137,9 +137,9 @@
     <input type="number" id="horseCount" placeholder="Адууны тоо">
     <button onclick="generateWeightFields()">Жингийн талбарууд</button>
     <div id="weightFields"></div>
-    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (100 кг-аас их)">
+    <input type="number" id="priceOver100" placeholder="1 кг-ийн үнэ (110 кг-аас их)">
     <div id="under100PriceField" style="display:none;">
-      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (100 кг-аас бага)">
+      <input type="number" id="priceUnder100" placeholder="1 кг-ийн үнэ (110 кг-аас бага)">
     </div>
     <button id="calculateBtn" onclick="generateReceipt()" disabled>Бодох</button>
     <button onclick="window.print()">Хэвлэж гаргах</button>
@@ -177,7 +177,7 @@
     function checkUnder100Weight() {
       const weights = Array.from(document.getElementsByClassName('horseWeight'))
         .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
-      const hasUnder100 = weights.some(w => w < 101);
+      const hasUnder100 = weights.some(w => w < 111);
       document.getElementById('under100PriceField').style.display = hasUnder100 ? 'block' : 'none';
       validateForm();
     }
@@ -185,10 +185,10 @@
     function updateWeightStats() {
       const weights = Array.from(document.getElementsByClassName('horseWeight'))
         .map(el => parseFloat(el.value)).filter(w => !isNaN(w));
-      const overCount = weights.filter(w => w >= 101).length;
-      const underCount = weights.filter(w => w < 101).length;
+      const overCount = weights.filter(w => w >= 111).length;
+      const underCount = weights.filter(w => w < 111).length;
       document.getElementById('weightStats').innerText = 
-        `100 кг-аас дээш адуу: ${overCount} | 100 кг-аас доош адуу: ${underCount}`;
+        `110 кг-аас дээш адуу: ${overCount} | 110 кг-аас доош адуу: ${underCount}`;
     }
 
     function createReceipt(copyLabel) {
@@ -204,7 +204,7 @@
 
       let totalOver = 0, totalUnder = 0, sumOver = 0, sumUnder = 0;
       weights.forEach(w => {
-        if (w >= 101) {
+        if (w >= 111) {
           totalOver += w;
           sumOver += w * priceOver100;
         } else {
