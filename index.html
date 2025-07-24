@@ -2,7 +2,7 @@
 <html lang="mn">
 <head>
   <meta charset="UTF-8">
-  <title>Малчны бүртгэл</title>
+  <title>Адууны бүртгэл</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
@@ -129,7 +129,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Малчны бүртгэлийн систем</h2>
+    <h2>Адууны бүртгэлийн систем</h2>
     <input type="date" id="date" placeholder="Огноо">
     <input type="text" id="herder" placeholder="Малчны нэр">
     <input type="text" id="account" placeholder="Дансны дугаар">
@@ -232,7 +232,7 @@
           <p><strong>Дансны дугаар:</strong> ${account}</p>
           <p><strong>Утасны дугаар:</strong> ${phone}</p>
           <p><strong>Адууны тоо:</strong> ${weights.length}</p>
-          <p><strong>Нийт жин:</strong> ${totalWeight.toFixed(2)} кг</p>
+          <p><strong>Нийт эуыээы жин:</strong> ${totalWeight.toFixed(2)} кг</p>
           <p><strong>110-аас дээш:</strong> ${totalOver.toFixed(2)} кг * ${priceOver100.toLocaleString()} ₮ = <span class="nowrap">${sumOver.toLocaleString()} ₮</span></p>
           ${totalUnder > 0 ? `<p><strong>110-аас доош:</strong> ${totalUnder.toFixed(2)} кг * ${priceUnder100.toLocaleString()} ₮ = <span class="nowrap">${sumUnder.toLocaleString()} ₮</span></p>` : ''}
           <p><strong>Нийт дүн:</strong> <span class="nowrap">${totalSum.toLocaleString()} ₮</span></p>
